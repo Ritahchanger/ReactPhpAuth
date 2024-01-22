@@ -52,7 +52,6 @@ const Signup = () => {
       isValid = false;
     }
 
-    // Validate confirm password
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
       isValid = false;
@@ -62,9 +61,34 @@ const Signup = () => {
     return isValid;
   };
 
-  const handleSignUp = (e) => {
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+
     if (!validateForm()) {
-      e.preventDefault();
+      return;
+    }
+
+    try {
+      const url =
+        "http://localhost/phpfullstack/1.1/ReactPhpAuth/backend/signup.php";
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to register new user. Status: ${response.status}`
+        );
+      } else {
+        const result = await response.json();
+        console.log(result);
+      }
+    } catch (error) {
+      console.error(error.message);
     }
   };
 

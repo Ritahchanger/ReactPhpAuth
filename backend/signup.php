@@ -12,7 +12,7 @@ if (create_database($database)) {
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $query = "CREATE TABLE IF NOT EXISTS users (
             userId int(7) primary key auto_increment,
-            username varchar(200) not null,
+            username varchar(200) not null unique,
             email varchar(200) not null unique,
             passd varchar(255) not null 
         )";
@@ -30,14 +30,28 @@ if (create_database($database)) {
             } else {
                 $username = $data['username'];
                 $email = $data['email'];
-                $password_hash = password_hash($data["password"], PASSWORD_BCRYPT);
 
-                $stmt = $connection->prepare("INSERT INTO `users` (username, email, passd) VALUES (?, ?, ?)");
+                $check_username_query = "SELECT username FROM users WHERE username=? ";
 
-                $stmt->bind_param("sss", $username, $email, $password_hash);
-                $stmt->execute();
+                $check_username_stmt = $connection->prepare($check_username_query);
+                $check_username_stmt->bind_param("s", $username);
 
-                echo json_encode(array("status" => "success", "message" => "Data inserted"));
+                $check_username_stmt->execute();
+
+                $check_username_stmt_result = $check_username_stmt->get_result();
+
+                if ($check_username_stmt_result->num_rows > 0) {
+                    echo json_encode(array("status" => "Failue", "message" => "This username is already used"));
+                } else {
+                    $password_hash = password_hash($data["password"], PASSWORD_BCRYPT);
+
+                    $stmt = $connection->prepare("INSERT INTO `users` (username, email, passd) VALUES (?, ?, ?)");
+
+                    $stmt->bind_param("sss", $username, $email, $password_hash);
+                    $stmt->execute();
+
+                    echo json_encode(array("status" => "success", "message" => "Data inserted"));
+                }
             }
         }
     }
